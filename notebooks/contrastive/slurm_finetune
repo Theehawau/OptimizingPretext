@@ -1,0 +1,10 @@
+#!/bin/sh
+#SBATCH --job-name=linear_probe        
+#SBATCH --nodes=1                   # Run all processes on a single node    
+#SBATCH --ntasks=1                  # Run on a single CPU
+#SBATCH --mem=40G                   # Total RAM to be used
+#SBATCH --gres=gpu:4            # Number of GPUs (per node)
+#SBATCH -p cscc-gpu-p                      # Use the gpu partition
+#SBATCH -q cscc-gpu-qos        
+
+python linear_probe.py

@@ -10,6 +10,7 @@ from PIL import Image
 import numpy as np
 import os
 import random
+import wandb
 from tqdm import tqdm
 from datasets import load_dataset
 import matplotlib.pyplot as plt
@@ -18,7 +19,20 @@ random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 
+devices = 1
+
 tinyImageNet_dataset = load_dataset("zh-plus/tiny-imagenet", cache_dir="datasets/")
+
+run = wandb.init(
+    project="cv-colorization",
+    name="colorize-resnet50",
+    # Track hyperparameters and run metadata
+    config={
+        "learning_rate": 1e-2,
+        "epochs": 100,
+        "devices": devices,
+    },
+)
 
 
 class ColorizeData(data.Dataset):
@@ -91,21 +105,29 @@ class ColorizeNet(nn.Module):
     output = self.upsample(midlevel_features)
     return output    
 
-def to_rgb(grayscale_input, ab_input, save_path=None, save_name=None):
+def to_rgb(grayscale_input, ab_input,ab_true, save_path=None, save_name=None):
       # Show/save rgb image from grayscale and ab channels
       os.makedirs(save_path['grayscale'], exist_ok=True)
       os.makedirs(save_path['colorized'], exist_ok=True)
+      os.makedirs(save_path['ground_truth'], exist_ok=True)
       plt.clf() # clear matplotlib 
       color_image = torch.cat((grayscale_input, ab_input), 0).numpy() # combine channels
       color_image = color_image.transpose((1, 2, 0))  # rescale for matplotlib
       color_image[:, :, 0:1] = color_image[:, :, 0:1] * 100
       color_image[:, :, 1:3] = color_image[:, :, 1:3] * 255 - 128   
       color_image = lab2rgb(color_image.astype(np.float64))
+      
+      color_image_true = torch.cat((grayscale_input, ab_true), 0).numpy() # combine channels
+      color_image_true = color_image_true.transpose((1, 2, 0))  # rescale for matplotlib
+      color_image_true[:, :, 0:1] = color_image_true[:, :, 0:1] * 100
+      color_image_true[:, :, 1:3] = color_image_true[:, :, 1:3] * 255 - 128
+      color_image_true = lab2rgb(color_image_true.astype(np.float64))
 
       grayscale_input = grayscale_input.squeeze().numpy()
       if save_path is not None and save_name is not None: 
         plt.imsave(arr=grayscale_input, fname='{}{}'.format(save_path['grayscale'], save_name), cmap='gray')
         plt.imsave(arr=color_image, fname='{}{}'.format(save_path['colorized'], save_name))
+        plt.imsave(arr=color_image_true, fname='{}{}'.format(save_path['ground_truth'], save_name))
 
 if __name__ == '__main__':
     # dataset = ColorizeData(tinyImageNet_dataset['train'])
@@ -119,6 +141,15 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)    
     print('Model loaded to device {}'.format(device))
+    if devices > 1:
+        print("Using", torch.cuda.device_count(), "GPUs")
+        model = torch.nn.DataParallel(model)
+    current_epoch = 0
+    
+    # if os.path.exists('weights/colorize_resnet_last.pth'):
+    #     print('Loading the last model')
+    #     model = torch.load('weights/colorize_resnet_last.pth')
+    #     current_epoch = 36
     
     # Create the datasets and dataloaders
     train_dataset = ColorizeData(tinyImageNet_dataset['train'])
@@ -133,7 +164,7 @@ if __name__ == '__main__':
     
     
     criterion = nn.MSELoss().cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
     es_patience = 30
     
@@ -142,20 +173,21 @@ if __name__ == '__main__':
     save_images = True
     best_val_loss = torch.tensor(float('inf'))
     
-    for epoch in tqdm(range(num_epochs), leave=False, total=num_epochs):
+    for epoch in tqdm(range(current_epoch, num_epochs), leave=False, total=num_epochs):
         model.train()
         avg_loss = 0.0
-        tq_obj = tqdm(train_loader, leave=True, total=len(train_loader)//128, desc=f'Train Epoch {epoch}')
+        tq_obj = tqdm(train_loader, leave=True, desc=f'Train Epoch {epoch}')
         for batch_idx, (input, output) in enumerate(tq_obj):
             input, output = input.to(device), output.to(device)
             optimizer.zero_grad()
             pred = model(input)
             loss = criterion(pred, output)
-            loss.backward()
+            loss.mean().backward()
             optimizer.step()
-            avg_loss += loss.item()
+            avg_loss += loss.mean().item()
             if batch_idx % log_each == 0:
                 # print(f'Epoch: {epoch} Batch: {batch_idx} Loss: {avg_loss:.4f}')
+                wandb.log({'loss': avg_loss, 'epoch': epoch, 'batch': batch_idx, 'lr': scheduler.get_last_lr()[0]})
                 tq_obj.set_postfix({'loss': avg_loss})
                 avg_loss = 0.0
         scheduler.step()
@@ -167,18 +199,19 @@ if __name__ == '__main__':
                 input, output = input.to(device), output.to(device)
                 pred = model(input)
                 loss = criterion(pred, output)
-                val_loss += loss.item()
+                val_loss += loss.mean().item()
             if save_images and not already_saved_images:
                 already_saved_images = True
                 for j in range(min(len(output), 5)): # save 10 images each epoch
                     save_path = {'grayscale': 'outputs/gray/', 'colorized': 'outputs/color/', 'ground_truth': 'outputs/ground_truth/'}
                     save_name = 'img-{}-epoch-{}.jpg'.format(batch_idx * valid_loader.batch_size + j, epoch+1)
-                    to_rgb(grayscale_input=input[j].cpu(), ab_input=pred[j].detach().cpu(), save_path=save_path, save_name=save_name)
+                    to_rgb(grayscale_input=input[j].cpu(), ab_input=pred[j].detach().cpu(), ab_true=output[j].detach().cpu(), save_path=save_path, save_name=save_name)
 
         print(f'Epoch: {epoch} Validation Loss: {val_loss/len(valid_loader):.4f}')
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             print(f'Best model saved with loss: {best_val_loss}')
+            wandb.log({'best_val_loss': best_val_loss, 'best_val_epoch': epoch})
             torch.save(model, f'weights/colorize_resnet_best.pth')
         torch.save(model, f'weights/colorize_resnet_last.pth')
             

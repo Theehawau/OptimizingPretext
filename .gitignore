@@ -2,3 +2,9 @@ weights/
 datasets/
 *.out
 outputs/
+*.pth
+*.ckpt
+notebooks/contrastive/lightning_logs/
+notebooks/contrastive/wandb
+*/*/wandb/
+wandb/
