@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from pytorch_lightning.loggers import WandbLogger
 
-wandb_logger = WandbLogger(project="contrastive-res18", name="linear_probe")
+
 
 
 from utils import *
@@ -39,7 +39,9 @@ class SimCLR_eval(pl.LightningModule):
         self.loss = torch.nn.CrossEntropyLoss()
 
     def forward(self, X):
-        return self.model(X)
+        with torch.no_grad():
+            X = self.model[0](X)
+        return self.model[1](X)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -82,10 +84,12 @@ class Hparams:
         self.img_size = 224 #image shape
         self.save = "./saved_models/" # save checkpoint
         self.gradient_accumulation_steps = 1 # gradient accumulation steps
-        self.batch_size = 128
-        self.lr = 1e-3
+        self.batch_size = 500
+        self.lr = 0.1#1e-3
         self.embedding_size= 128 # papers value is 128
         self.temperature = 0.5 # 0.1 or 0.5
+        self.data='tinyimagenet' #imagenet1k_0.1
+        self.random = False
 
 
 
@@ -94,24 +98,29 @@ available_gpus = len([torch.cuda.device(i) for i in range(torch.cuda.device_coun
 train_config = Hparams()
 save_model_path = os.path.join(os.getcwd(), "saved_models/")
 print('available_gpus:', available_gpus)
-filename = 'SimCLR_ResNet18_finetune_'
+filename = f'{train_config.data}_ResNet18_finetune_mlp_only_'
 reproducibility(train_config)
 save_name = filename + '_Final.ckpt'
 
+wandb_logger = WandbLogger(project="contrastive-res18", name=filename, config=train_config.__dict__)
 # load resnet backbone
 backbone = models.resnet18(pretrained=False)
 backbone.fc = nn.Identity()
-checkpoint = torch.load('resnet18_backbone_weights.ckpt')
-backbone.load_state_dict(checkpoint['model_state_dict'])
-model = SimCLR_eval(train_config.lr, model=backbone, linear_eval=False)
+if not train_config.random:
+    print('Loading the pretrained model')
+    checkpoint = torch.load('resnet18_backbone_weights.ckpt')
+    backbone.load_state_dict(checkpoint['model_state_dict'])
+model = SimCLR_eval(train_config.lr, model=backbone, linear_eval=True)
 
 # preprocessing and data loaders
 transform_preprocess = Augment(train_config.img_size).test_transform
 
-df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
-df = reduce_dataset(df, 0.1)
+# df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
+# df = reduce_dataset(df, 0.1)
+
+df = load_dataset("zh-plus/tiny-imagenet", cache_dir="datasets/")
 data_loader = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess)
-data_loader_test = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess, split='validation')
+data_loader_test = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess, split='valid')
 
 
 # callbacks and trainer
@@ -123,8 +132,8 @@ checkpoint_callback = ModelCheckpoint(filename=filename, dirpath=save_model_path
 trainer = Trainer(callbacks=[checkpoint_callback,accumulator],
                   gpus=available_gpus,
                   max_epochs=train_config.epochs, 
-                  logger=wandb_logger)
+                  logger=wandb_logger,)
 
 trainer.fit(model, data_loader,data_loader_test)
 trainer.save_checkpoint(save_name)
-trainer.test(ckpt_path=save_name)
+trainer.validate(ckpt_path=checkpoint_callback.best_model_path, dataloaders=data_loader_test)
