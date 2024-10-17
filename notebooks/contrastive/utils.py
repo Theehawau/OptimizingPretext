@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from torchvision import transforms
+import torchvision.models as models
 import torchvision.transforms as T
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -16,19 +17,77 @@ import matplotlib.pyplot as plt
 class Hparams:
     def __init__(self):
         self.epochs = 300 # number of training epochs
-        self.seed = 77777 # randomness seed
+        self.seed = 42 # randomness seed
         self.cuda = True # use nvidia gpu
         self.img_size = 224 #image shape
         self.save = "./saved_models/" # save checkpoint
         self.load = False # load pretrained checkpoint
         self.gradient_accumulation_steps = 5 # gradient accumulation steps
-        self.batch_size = 200
-        self.lr = 3e-4 # for ADAm only
+        self.batch_size = 400
+        self.lr = 3e-3 # for ADAm only
         self.weight_decay = 1e-6
-        self.embedding_size= 128 # papers value is 128
+        self.embedding_size= 4*128 # papers value is 128
         self.temperature = 0.5 # 0.1 or 0.5
         self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
-        
+        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
+
+class SimCLR_pl(nn.Module):
+    def __init__(self, config, model=None, feat_dim=512):
+        super().__init__()
+        self.config = config
+
+        self.model = AddProjection(config, model=model, mlp_dim=feat_dim)
+
+        # self.loss = ContrastiveLoss(config.batch_size, temperature=self.config.temperature)
+
+    def forward(self, X):
+        return self.model(X)
+
+class AddProjection(nn.Module):
+    def __init__(self, config, model=None, mlp_dim=512):
+        super(AddProjection, self).__init__()
+        embedding_size = config.embedding_size
+        self.backbone = default(model, models.resnet18(pretrained=False, num_classes=config.embedding_size))
+        mlp_dim = default(mlp_dim, self.backbone.fc.in_features)
+        print('Dim MLP input:',mlp_dim)
+        self.backbone.fc = nn.Identity()
+
+        # add mlp projection head
+        self.projection = nn.Sequential(
+            nn.Linear(in_features=mlp_dim, out_features=mlp_dim),
+            nn.BatchNorm1d(mlp_dim),
+            nn.ReLU(),
+            nn.Linear(in_features=mlp_dim, out_features=embedding_size),
+            nn.BatchNorm1d(embedding_size),
+        )
+
+    def forward(self, x, return_embedding=False):
+        embedding = self.backbone(x)
+        if return_embedding:
+            return embedding
+        return self.projection(embedding)
+
+
+def define_param_groups(model, weight_decay, optimizer_name):
+    def exclude_from_wd_and_adaptation(name):
+        if 'bn' in name:
+            return True
+        if optimizer_name == 'lars' and 'bias' in name:
+            return True
+
+    param_groups = [
+        {
+            'params': [p for name, p in model.named_parameters() if not exclude_from_wd_and_adaptation(name)],
+            'weight_decay': weight_decay,
+            'layer_adaptation': True,
+        },
+        {
+            'params': [p for name, p in model.named_parameters() if exclude_from_wd_and_adaptation(name)],
+            'weight_decay': 0.,
+            'layer_adaptation': False,
+        },
+    ]
+    return param_groups
 
 def imshow(img):
     """
@@ -208,12 +267,12 @@ class ContrastiveLoss(nn.Module):
         loss = torch.sum(all_losses) / (2 * self.batch_size)
         return loss
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    print("Loading dataset")
+#     print("Loading dataset")
 
-    df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
-    df = reduce_dataset(df, 0.1)
+#     df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
+#     df = reduce_dataset(df, 0.1)
 
-    dataset = ImageNetHF(df, transform=Augment(224), split='train')
+#     dataset = ImageNetHF(df, transform=Augment(224), split='train')
 

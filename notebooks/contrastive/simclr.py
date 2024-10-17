@@ -22,12 +22,10 @@ from pytorch_lightning import Trainer
 import os
 from pytorch_lightning.callbacks import GradientAccumulationScheduler
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torchvision.models import  resnet18
+from torchvision.models import  resnet18, resnet50
 import warnings
 warnings.filterwarnings("ignore")
 from pytorch_lightning.loggers import WandbLogger
-
-wandb_logger = WandbLogger(project="contrastive-res18", name="SimCLR")
 
 
 class AddProjection(nn.Module):
@@ -95,7 +93,7 @@ class SimCLR_pl(pl.LightningModule):
         z1 = self.model(x1)
         z2 = self.model(x2)
         loss = self.loss(z1, z2)
-        self.log('Contrastive loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('Contrastive loss', loss,rank_zero_only=True, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def configure_optimizers(self):
@@ -119,48 +117,58 @@ class SimCLR_pl(pl.LightningModule):
 available_gpus = len([torch.cuda.device(i) for i in range(torch.cuda.device_count())])
 save_model_path = os.path.join(os.getcwd(), "saved_models/")
 print('available_gpus:',available_gpus)
-filename='SimCLR_ResNet18_adam_'
+filename='SimCLR_ResNet50_imagenet_'
 resume_from_checkpoint = True
 train_config = Hparams()
 
-reproducibility(train_config)
+ 
 save_name = filename + '.ckpt'
 
-model = SimCLR_pl(train_config, model=resnet18(pretrained=False), feat_dim=512)
+backbone = resnet50(pretrained=False)
+model = SimCLR_pl(train_config, model=backbone, feat_dim=2048)
+
 
 transform = Augment(train_config.img_size)
-df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
-df = reduce_dataset(df, 0.1)
+df = load_dataset("/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k")
+df = reduce_dataset(df, 0.3)
 data_loader = get_imagenet_dataloader(train_config.batch_size, df, transform)
 
 accumulator = GradientAccumulationScheduler(scheduling={0: train_config.gradient_accumulation_steps})
 checkpoint_callback = ModelCheckpoint(filename=filename, dirpath=save_model_path,
                                         save_last=True, save_top_k=2,monitor='Contrastive loss_epoch',mode='min')
 
+wandb_logger = WandbLogger(project="contrastive-res50", name=f"{filename}_pretrain", config=train_config.__dict__)
+
+# wandb_logger = None
 if resume_from_checkpoint:
-  trainer = Trainer(callbacks=[accumulator, checkpoint_callback],
-                  gpus=available_gpus,
-                  max_epochs=train_config.epochs,
-                  resume_from_checkpoint=train_config.checkpoint_path,
-                  logger=wandb_logger)
+    print('Resuming from checkpoint')
+    trainer = Trainer(callbacks=[accumulator, checkpoint_callback],
+                    gpus=available_gpus,
+                    max_epochs=train_config.epochs,
+                    resume_from_checkpoint=train_config.checkpoint_path,
+                    logger=wandb_logger)
+    # , strategy='ddp'
+    # logger=wandb_logger,
 else:
-  trainer = Trainer(callbacks=[accumulator, checkpoint_callback],
-                  gpus=available_gpus,
-                  max_epochs=train_config.epochs)
+    print('Starting from scratch')
+    trainer = Trainer(callbacks=[accumulator, checkpoint_callback],
+                    gpus=available_gpus,
+                    max_epochs=train_config.epochs,
+                    logger=wandb_logger)
 
 
 trainer.fit(model, data_loader)
 
-
 trainer.save_checkpoint(save_name)
 
+backbone = resnet50(pretrained=False)
+model_pl = SimCLR_pl(train_config, model=backbone, feat_dim=2048)
 
-model_pl = SimCLR_pl(train_config, model=resnet18(pretrained=False))
-model_pl = weights_update(model_pl, "SimCLR_ResNet18_adam_.ckpt")
+model_pl = weights_update(model_pl, checkpoint_callback.best_model_path)
 
-resnet18_backbone_weights = model_pl.model.backbone
+resnet_backbone_weights = model_pl.model.backbone
 torch.save({
-            'model_state_dict': resnet18_backbone_weights.state_dict(),
-            }, 'resnet18_backbone_weights.ckpt')
+            'model_state_dict': resnet_backbone_weights.state_dict(),
+            }, 'resnet50_imagenet_backbone_weights.ckpt')
 
 
