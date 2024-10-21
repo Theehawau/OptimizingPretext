@@ -1,9 +1,8 @@
 #!/bin/sh
 #SBATCH --job-name=contrastive        
 #SBATCH --nodes=1                   # Run all processes on a single node    
-#SBATCH --gres=gpu:4            # Number of GPUs (per node)
-#SBATCH -p it-hpc                     # Use the gpu partition
-#SBATCH --mem=200GB                  # Real mem
-#SBATCH --nodelist=gpu80-1               # Time limit in D-HH:MM``
+#SBATCH --gres=gpu:1           # Number of GPUs (per node)
+#SBATCH -p cscc-gpu-p                     # Use the gpu partition
+#SBATCH -q cscc-gpu-qos                      # Number of tasks per array
 
-python pretrain.py
+python linear_probe.py

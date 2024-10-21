@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-| PPT Config | Model | Dataset | Dataset Perc. | PPT Accuracy/Loss | Linear Probe K=10| Linear Probe K=50| Linear Probe K=100| Full FT | 
-=======
-SVM
-| PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy | Linear Probe K=10| Linear Probe K=50| Linear Probe K=100| Full FT | 
->>>>>>> 110375c09fa5151001dd8eef92af30396b360370
 SVM
 | PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy | Linear Probe K=10| Linear Probe K=50| Linear Probe K=100| Full FT | 
 |---|---|---|---|---|---|---|---|---|
@@ -37,4 +31,6 @@ Finetuning - full Imagenet
 - Full finetuning
 
 Using TinyImageNet for all experiments
+
+
 

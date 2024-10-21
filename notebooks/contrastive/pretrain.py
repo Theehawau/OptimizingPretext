@@ -8,9 +8,9 @@ import torchvision.models as models
 from tqdm import tqdm
 from torch.optim import SGD, Adam
 from torchtune.training.metric_logging import WandBLogger
-import torch.distributed as dist
-import torch.multiprocessing as mp 
-from torch.nn.parallel import DistributedDataParallel as DDP
+# import torch.distributed as dist
+# import torch.multiprocessing as mp 
+# from torch.nn.parallel import DistributedDataParallel as DDP
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -19,7 +19,7 @@ import wandb
 
 class Hparams:
     def __init__(self):
-        self.epochs = 300 # number of training epochs
+        self.epochs = 100 # number of training epochs
         self.seed = 42 # randomness seed
         self.cuda = True # use nvidia gpu
         self.img_size = 224 #image shape
@@ -33,9 +33,10 @@ class Hparams:
         self.temperature = 0.5 # 0.1 or 0.5
         self.resume_from_checkpoint = True
         self.backbone ='resnet50'
-        self.df='imagenet_0.3'
+        self.df='tinyimagenet'
         self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
-        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
+        self.dataset_path = "/l/users/hawau.toyin/CV805/OptimizingPretext/datasets/zh-plus___tiny-imagenet"
+        self.reduce = 1.0
 
 class Trainer():
     def __init__(self, config, model):
@@ -96,7 +97,7 @@ class Trainer():
             self.logger.log('Contrastive loss epoch', epoch_loss/len(self.train_loader),
                              self.global_step )
             if epoch_loss < self.best_loss:
-                print(f"Saved best ckpt at epoch {epoch}, with loss {epoch_loss}")
+                print(f"Saved best ckpt at epoch {epoch}, with loss {epoch_loss/len(self.train_loader)}")
                 self.save_best()
                 self.best_loss = epoch_loss
             self.epoch += 1
@@ -108,6 +109,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict(),
             'epoch': self.epoch,
             'global_step': self.global_step,
+            'best_loss': self.best_loss
         }
         torch.save(to_save, path or f"{self.config.save}/{self.exp_name}/last.ckpt")
     
@@ -122,11 +124,13 @@ class Trainer():
         print("Loading existing checkpoint from", f"{self.config.save}/{self.exp_name}/last.ckpt")
         self.epoch = checkpoint['epoch']
         self.global_step = checkpoint['global_step']
+        self.best_loss = checkpoint.get('best_loss', np.inf)
 
     def get_dataloaders(self):
         transform = Augment(self.config.img_size)
         df = load_dataset(self.config.dataset_path)
-        df = reduce_dataset(df, 0.3)
+        if self.config.reduce < 1.0:
+            df = reduce_dataset(df, self.config.reduce)
         return get_imagenet_dataloader(self.config.batch_size, df, transform=transform, split='train')
     
     def training_step(self, batch, batch_idx):
@@ -170,7 +174,7 @@ def main():
 
     best_pretrain = weights_update(model, pre_trainer.best_checkpoint)
 
-    resnet_backbone_weights = model.model.backbone
+    resnet_backbone_weights = best_pretrain.model.backbone
     torch.save({
                 'model_state_dict': resnet_backbone_weights.state_dict(),
                 }, f'resnet50_{config.df}_backbone_weights.ckpt')
