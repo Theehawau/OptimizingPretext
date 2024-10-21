@@ -17,6 +17,12 @@ Linear Layer
 | Rotation | ResNet50 | ImageNet 1K | 0.3 | 76.85% | 48.20% | 22.7% | -- | |
 
 
+LR
+| PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy/Loss | Linear Probe | Full FT | 
+|---|---|---|---|---|---|---|
+| Random Init | ResNet50 | -- | -- | -- | 9.5 | -- |
+| Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | -- |
+| Contrastive | ResNet50 | Imagenet1k |  -- | -- | -- | -- |
 
 
 ### Dataset
