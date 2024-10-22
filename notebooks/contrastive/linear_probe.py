@@ -18,7 +18,7 @@ from utils import *
 class Hparams:
     def __init__(self):
         self.epochs = 100 # number of training epochs
-        self.seed = 42 # randomness seed
+        self.seed = 77777 # randomness seed
         self.cuda = True # use nvidia gpu
         self.img_size = 224 #image shape
         self.save = "./saved_models/" # save checkpoint
@@ -89,6 +89,7 @@ class SimCLR_eval(pl.LightningModule):
           optimizer = SGD(self.model.parameters(), lr=self.lr, momentum=0.9)
         return [optimizer]
 
+    
 
 # general stuff
 available_gpus = len([torch.cuda.device(i) for i in range(torch.cuda.device_count())])

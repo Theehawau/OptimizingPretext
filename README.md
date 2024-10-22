@@ -18,11 +18,12 @@ Linear Layer
 
 
 LR
-| PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy/Loss | Linear Probe | Full FT | 
-|---|---|---|---|---|---|---|
-| Random Init | ResNet50 | -- | -- | -- | 9.5 | -- |
-| Contrastive | ResNet50 | TinyImageNet |  -- | -- | 36.39 | -- |
-| Contrastive | ResNet50 | Imagenet1k |  -- | -- | -- | -- |
+| PPT Config | Model | Dataset | PTT Dataset Perc. | FT Dataset Perc. | PPT Accuracy/Loss | Linear Probe | Full FT | 
+|---|---|---|---|---|---|---|---|
+| Random Init | ResNet50 | TinyImageNet | -- | 1 | -- | 9.5 | -- |
+| Random Init | ResNet50 | Imagenet1k | -- | 0.1 | -- | 1.1 | -- |
+| Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | 36.39 | -- |
+| Contrastive | ResNet50 | Imagenet1k |  0.3 |  0.1 | -- | 17.3 | -- | -- |
 
 
 ### Dataset

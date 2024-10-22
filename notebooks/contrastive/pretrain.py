@@ -26,7 +26,7 @@ class Hparams:
         self.save = "./saved_models/" # save checkpoint
         self.load = False # load pretrained checkpoint
         self.gradient_accumulation_steps = 1 # gradient accumulation steps
-        self.batch_size = 200
+        self.batch_size = 400
         self.lr = 3e-3 # for ADAm only
         self.weight_decay = 1e-6
         self.embedding_size= 4*128 # papers value is 128
@@ -109,7 +109,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict(),
             'epoch': self.epoch,
             'global_step': self.global_step,
-            'best_loss': self.best_loss
+            'best_loss': self.best_loss,
         }
         torch.save(to_save, path or f"{self.config.save}/{self.exp_name}/last.ckpt")
     
@@ -118,12 +118,12 @@ class Trainer():
     
     def resume_checkpoint(self):
         checkpoint = torch.load(f"{self.config.save}/{self.exp_name}/last.ckpt")
-        self.model.load_state_dict(checkpoint['state_dict'])
+        self.model.load_state_dict({k.replace('module.',''): v for k, v in checkpoint['state_dict'].items()})
         self.model.to(self.device)
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         print("Loading existing checkpoint from", f"{self.config.save}/{self.exp_name}/last.ckpt")
         self.epoch = checkpoint['epoch']
-        self.global_step = checkpoint['global_step']
+        self.global_step = checkpoint.get('global_step', 2500)
         self.best_loss = checkpoint.get('best_loss', np.inf)
 
     def get_dataloaders(self):
