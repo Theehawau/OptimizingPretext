@@ -21,7 +21,7 @@ LR
 | PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy/Loss | Linear Probe | Full FT | 
 |---|---|---|---|---|---|---|
 | Random Init | ResNet50 | -- | -- | -- | 9.5 | -- |
-| Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | -- |
+| Contrastive | ResNet50 | TinyImageNet |  -- | -- | 36.39 | -- |
 | Contrastive | ResNet50 | Imagenet1k |  -- | -- | -- | -- |
 
 
