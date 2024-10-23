@@ -22,7 +22,7 @@ LR
 |---|---|---|---|---|---|---|---|
 | Random Init | ResNet50 | TinyImageNet | -- | 1 | -- | 9.5 | -- |
 | Random Init | ResNet50 | Imagenet1k | -- | 0.1 | -- | 1.1 | -- |
-| Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | 36.39 | -- |
+| Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | 36.39 | 48.60 |
 | Contrastive | ResNet50 | Imagenet1k |  0.3 |  0.1 | -- | 17.3 | -- | -- |
 
 
