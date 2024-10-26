@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torch.multiprocessing import cpu_count
 from datasets import load_dataset,DatasetDict
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class Hparams:
     def __init__(self):
@@ -30,6 +31,17 @@ class Hparams:
         self.temperature = 0.5 # 0.1 or 0.5
         self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
         self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
+
+datasets_dict = {
+    'imagenet_0.3': {
+        'path': '/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k',
+        'split': 'validation',
+    },
+    'tinyimagenet': {
+        'path': '/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k',
+        'split': 'valid',
+    }
+}
 
 class SimCLR_pl(nn.Module):
     def __init__(self, config, model=None, feat_dim=512):
@@ -266,6 +278,37 @@ class ContrastiveLoss(nn.Module):
         all_losses = -torch.log(nominator / torch.sum(denominator, dim=1))
         loss = torch.sum(all_losses) / (2 * self.batch_size)
         return loss
+    
+
+def extract_features(
+    loader,
+    feature_extraction_model,
+    batch_size = 512,
+    device = 'cuda'):
+    '''
+    Generates numpy array with features given a pretrained resnet model.
+    Parameters:
+    - loader : DataLoader object
+    - feature_extraction_model : Module to extract features
+    - batch_size
+    Returns
+    - features : Numpy array with extracted features
+    '''
+    # loader = DataLoader(
+    #         image_dataset, batch_size=batch_size, shuffle=False, num_workers=1
+    #     )
+    feat_list = []
+    y_list = [] #lazy way to also extract labels
+    # counter = 0 ## delete
+    feature_extraction_model.eval()
+    with torch.no_grad():
+        for images, labels in tqdm(loader): # update this if dataloader is replaced
+            images = images.to(device)
+            outputs = feature_extraction_model(images)
+            feat_list.append(outputs)
+            y_list.append(labels)
+            
+    return torch.cat(feat_list).cpu().numpy(), torch.cat(y_list).cpu().numpy()
 
 # if __name__ == "__main__":
 

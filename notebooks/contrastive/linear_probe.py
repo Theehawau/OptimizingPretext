@@ -18,7 +18,7 @@ from utils import *
 class Hparams:
     def __init__(self):
         self.epochs = 100 # number of training epochs
-        self.seed = 77777 # randomness seed
+        self.seed = 42 # randomness seed
         self.cuda = True # use nvidia gpu
         self.img_size = 224 #image shape
         self.save = "./saved_models/" # save checkpoint
@@ -42,9 +42,6 @@ class SimCLR_eval(pl.LightningModule):
           model.eval()
         self.mlp = torch.nn.Sequential(
             torch.nn.Linear(feat_dim,1000),
-            # torch.nn.ReLU(),
-            # torch.nn.Dropout(0.1),
-            # torch.nn.Linear(128, 10)
         )
 
         self.model = torch.nn.Sequential(
@@ -116,13 +113,16 @@ model = SimCLR_eval(train_config.lr, model=backbone, linear_eval=True)
 transform_preprocess = Augment(train_config.img_size).test_transform
 
 print('Loading the dataset')
-# df = load_dataset("/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k")
-# df = reduce_dataset(df, 0.1)
-
-df = load_dataset("zh-plus/tiny-imagenet", cache_dir="datasets/")
-data_loader = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess)
-data_loader_test = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess, split='valid')
-
+if train_config.data == 'tinyimagenet':
+    df = load_dataset("zh-plus/tiny-imagenet", cache_dir="datasets/")
+    data_loader = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess)
+    data_loader_test = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess, split='valid')
+    
+else:
+    df = load_dataset("/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k")
+    df = reduce_dataset(df, 0.1)
+    data_loader = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess)
+    data_loader_test = get_imagenet_dataloader(train_config.batch_size, df, transform_preprocess, split='validation')
 
 # callbacks and trainer
 accumulator = GradientAccumulationScheduler(scheduling={0: train_config.gradient_accumulation_steps})

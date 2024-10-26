@@ -19,7 +19,7 @@ import wandb
 
 class Hparams:
     def __init__(self):
-        self.epochs = 100 # number of training epochs
+        self.epochs = 20 # number of training epochs
         self.seed = 42 # randomness seed
         self.cuda = True # use nvidia gpu
         self.img_size = 224 #image shape
@@ -31,19 +31,19 @@ class Hparams:
         self.weight_decay = 1e-6
         self.embedding_size= 4*128 # papers value is 128
         self.temperature = 0.5 # 0.1 or 0.5
-        self.resume_from_checkpoint = True
+        self.resume_from_checkpoint = False
         self.backbone ='resnet50'
-        self.df='tinyimagenet'
+        self.df='imagenet_0.3'
         self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
-        self.dataset_path = "/l/users/hawau.toyin/CV805/OptimizingPretext/datasets/zh-plus___tiny-imagenet"
-        self.reduce = 1.0
+        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
+        self.reduce = 0.3
 
 class Trainer():
     def __init__(self, config, model):
         self.config = config
         self.config.batch_size = self.config.batch_size * torch.cuda.device_count()
         self.model = model 
-        self.exp_name = "SimCLR_pretrain_" + self.config.backbone + self.config.df 
+        self.exp_name = "SimCLR_pretrain12hrs_" + self.config.backbone + self.config.df 
         self.loss = ContrastiveLoss(config.batch_size, temperature=self.config.temperature)
         self.optimizer, self.lr_scheduler = self.configure_optimizers()
         self.best_loss = np.inf
@@ -170,14 +170,14 @@ def main():
 
     pre_trainer = Trainer(config, model)
 
-    pre_trainer.train()
+    # pre_trainer.train()
 
     best_pretrain = weights_update(model, pre_trainer.best_checkpoint)
 
     resnet_backbone_weights = best_pretrain.model.backbone
     torch.save({
                 'model_state_dict': resnet_backbone_weights.state_dict(),
-                }, f'resnet50_{config.df}_backbone_weights.ckpt')
+                }, f'resnet50_12hrs_{config.df}_backbone_weights.ckpt')
 
 
 # def ddp_setup(rank: int, world_size: int):
