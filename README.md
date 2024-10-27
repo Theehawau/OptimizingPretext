@@ -24,6 +24,13 @@ LR
 | Random Init | ResNet50 | Imagenet1k | -- | 0.1 | -- | 1.1 | -- |
 | Contrastive | ResNet50 | TinyImageNet |  -- | -- | -- | 36.39 | 48.60 |
 | Contrastive | ResNet50 | Imagenet1k |  0.3 |  0.1 | -- | 17.3 | -- | -- |
+| Random Init KK | ResNet50 | TinyImageNet | -- | 1 | -- | 10.46 | -- |
+| Random Init KK | ResNet50 | Imagenet1k | -- | 0.1 | -- | 1.96 | -- |
+| Random Init KK | ResNet50 | Imagenet1k | -- | 0.3 | -- | 3.82 | -- |
+| Rotation | ResNet50 | TinyImageNet | 1 | 1 | 74.53 | 11.67 | -- |
+| Rotation | ResNet50 | Imagenet1k | 0.3 | 0.1 | 76.85 | 6.98 | -- |
+| Rotation | ResNet50 | Imagenet1k | 0.3 | 0.3 | 76.85 | 7.41 | -- |
+
 
 
 ### Dataset
