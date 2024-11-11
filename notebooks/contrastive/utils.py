@@ -15,23 +15,6 @@ from datasets import load_dataset,DatasetDict
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-class Hparams:
-    def __init__(self):
-        self.epochs = 300 # number of training epochs
-        self.seed = 42 # randomness seed
-        self.cuda = True # use nvidia gpu
-        self.img_size = 224 #image shape
-        self.save = "./saved_models/" # save checkpoint
-        self.load = False # load pretrained checkpoint
-        self.gradient_accumulation_steps = 5 # gradient accumulation steps
-        self.batch_size = 400
-        self.lr = 3e-3 # for ADAm only
-        self.weight_decay = 1e-6
-        self.embedding_size= 4*128 # papers value is 128
-        self.temperature = 0.5 # 0.1 or 0.5
-        self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
-        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
-
 datasets_dict = {
     'imagenet_0.3': {
         'path': '/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k',
@@ -59,10 +42,16 @@ class AddProjection(nn.Module):
     def __init__(self, config, model=None, mlp_dim=512):
         super(AddProjection, self).__init__()
         embedding_size = config.embedding_size
-        self.backbone = default(model, models.resnet18(pretrained=False, num_classes=config.embedding_size))
-        mlp_dim = default(mlp_dim, self.backbone.fc.in_features)
+        self.backbone = default(model, models.resnet50(pretrained=False, num_classes=config.embedding_size))
+        if config.architecture == 'resnet':
+            mlp_dim = default(mlp_dim, self.backbone.fc.in_features)
+            self.backbone.fc = nn.Identity()
+        
+        elif config.architecture == 'vits':
+            mlp_dim = 768
+            self.backbone.heads = nn.Identity()
+
         print('Dim MLP input:',mlp_dim)
-        self.backbone.fc = nn.Identity()
 
         # add mlp projection head
         self.projection = nn.Sequential(
@@ -135,7 +124,7 @@ def device_as(t1, t2):
 
 # From https://github.com/PyTorchLightning/pytorch-lightning/issues/924
 def weights_update(model, checkpoint_path):
-    checkpoint = torch.load(checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
     model_dict = model.state_dict()
     pretrained_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in model_dict}
     model_dict.update(pretrained_dict)
@@ -309,6 +298,23 @@ def extract_features(
             y_list.append(labels)
             
     return torch.cat(feat_list).cpu().numpy(), torch.cat(y_list).cpu().numpy()
+
+
+def img_to_patch(x, patch_size, flatten_channels=True):
+    """
+    Inputs:
+        x - torch.Tensor representing the image of shape [B, C, H, W]
+        patch_size - Number of pixels per dimension of the patches (integer)
+        flatten_channels - If True, the patches will be returned in a flattened format
+                           as a feature vector instead of a image grid.
+    """
+    B, C, H, W = x.shape
+    x = x.reshape(B, C, H//patch_size, patch_size, W//patch_size, patch_size)
+    x = x.permute(0, 2, 4, 1, 3, 5) # [B, H', W', C, p_H, p_W]
+    x = x.flatten(1,2)              # [B, H'*W', C, p_H, p_W]
+    if flatten_channels:
+        x = x.flatten(2,4)          # [B, H'*W', C*p_H*p_W]
+    return x
 
 # if __name__ == "__main__":
 

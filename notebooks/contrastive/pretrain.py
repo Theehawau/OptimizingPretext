@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import torch
+import argparse
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -8,47 +9,26 @@ import torchvision.models as models
 from tqdm import tqdm
 from torch.optim import SGD, Adam
 from torchtune.training.metric_logging import WandBLogger
-# import torch.distributed as dist
-# import torch.multiprocessing as mp 
-# from torch.nn.parallel import DistributedDataParallel as DDP
 import warnings
 warnings.filterwarnings("ignore")
 
 from utils import *
+from config import configs
 import wandb
 
-class Hparams:
-    def __init__(self):
-        self.epochs = 20 # number of training epochs
-        self.seed = 42 # randomness seed
-        self.cuda = True # use nvidia gpu
-        self.img_size = 224 #image shape
-        self.save = "./saved_models/" # save checkpoint
-        self.load = False # load pretrained checkpoint
-        self.gradient_accumulation_steps = 1 # gradient accumulation steps
-        self.batch_size = 400
-        self.lr = 3e-3 # for ADAm only
-        self.weight_decay = 1e-6
-        self.embedding_size= 4*128 # papers value is 128
-        self.temperature = 0.5 # 0.1 or 0.5
-        self.resume_from_checkpoint = False
-        self.backbone ='resnet50'
-        self.df='imagenet_0.3'
-        self.checkpoint_path = './saved_models/last.ckpt' # replace checkpoint path here
-        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
-        self.reduce = 0.3
+
 
 class Trainer():
     def __init__(self, config, model):
         self.config = config
-        self.config.batch_size = self.config.batch_size * torch.cuda.device_count()
+        self.config.batch_size = self.config.batch_size #* torch.cuda.device_count()
         self.model = model 
-        self.exp_name = "SimCLR_pretrain12hrs_" + self.config.backbone + self.config.df 
+        self.exp_name = self.config.exp_prefix + self.config.backbone + self.config.df 
         self.loss = ContrastiveLoss(config.batch_size, temperature=self.config.temperature)
         self.optimizer, self.lr_scheduler = self.configure_optimizers()
         self.best_loss = np.inf
         self.epoch = 0
-        self.device = "cuda"
+        self.device = config.device
         self.best_checkpoint = f"{self.config.save}/{self.exp_name}/best.ckpt"
         self.global_step = 0
         
@@ -59,12 +39,9 @@ class Trainer():
         
         if self.config.resume_from_checkpoint:
             self.resume_checkpoint()
-        if torch.cuda.device_count() > 1:
-            print("Using", torch.cuda.device_count(), "GPUs")
-            self.model = torch.nn.DataParallel(self.model)
         
-        print(f'Number of trainable parameters: {sum(p.numel() for p in self.model.parameters() if p.requires_grad)}')
-        print(f'Number of total parameters: {sum(p.numel() for p in self.model.parameters())}')
+        print(f'Number of trainable parameters: {sum(p.numel() for p in self.model.parameters() if p.requires_grad)/1e6:.2f}M')
+        print(f'Number of total parameters: {sum(p.numel() for p in self.model.parameters())/1e6:.2f}')
         
         self.train_loader = self.get_dataloaders()
         
@@ -121,9 +98,9 @@ class Trainer():
         self.model.load_state_dict({k.replace('module.',''): v for k, v in checkpoint['state_dict'].items()})
         self.model.to(self.device)
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        print("Loading existing checkpoint from", f"{self.config.save}/{self.exp_name}/last.ckpt")
+        print("Loaded existing checkpoint from", f"{self.config.save}/{self.exp_name}/last.ckpt")
         self.epoch = checkpoint['epoch']
-        self.global_step = checkpoint.get('global_step', 2500)
+        self.global_step = checkpoint.get('global_step', 0)
         self.best_loss = checkpoint.get('best_loss', np.inf)
 
     def get_dataloaders(self):
@@ -161,38 +138,47 @@ class Trainer():
         return optimizer, lr_scheduler
 
 def main():
-    config = Hparams()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c','--config', type=str, default='base', choices=configs.keys(), help='Configuration to use')
+    parser.add_argument('-t','--train', action="store_true",  help='True to train, False to save weights only')
+
+
+    args = parser.parse_args()
+    config = configs[args.config]()
+    print('Loaded configuration for', args.config)
     reproducibility(config)
 
-    backbone = models.resnet50(pretrained=False)
-    feat_dim = 2048
+    if config.architecture == 'resnet':
+        print('Using ResNet50 backbone')
+        backbone = models.resnet50(pretrained=False)
+        feat_dim = 2048
+    else:
+        print('Using ViT backbone')
+        backbone = models.vit_b_16(pretrained=False)
+        feat_dim = 768
+        
+    if config.continue_task:
+        print('Loading previous task backbone weights from', os.path.basename(config.previous_task_backbone))
+        backbone.load_state_dict(torch.load(config.previous_task_backbone), strict=False)
+
     model = SimCLR_pl(config, model=backbone, feat_dim=feat_dim)
 
     pre_trainer = Trainer(config, model)
 
-    # pre_trainer.train()
+    if args.train:
+        print('Training model..')
+        pre_trainer.train()
 
+    print(f'Saving backbone weights loaded from {pre_trainer.best_checkpoint}..')
     best_pretrain = weights_update(model, pre_trainer.best_checkpoint)
 
     resnet_backbone_weights = best_pretrain.model.backbone
-    torch.save({
-                'model_state_dict': resnet_backbone_weights.state_dict(),
-                }, f'resnet50_12hrs_{config.df}_backbone_weights.ckpt')
+    torch.save(resnet_backbone_weights.state_dict(), f'{config.save_prefix}_{config.df}_backbone_weights.ckpt')
+    # torch.save({
+    #             'model_state_dict': resnet_backbone_weights.state_dict(),
+    #             }, f'{config.save_prefix}_{config.df}_backbone_weights.ckpt')
 
-
-# def ddp_setup(rank: int, world_size: int):
-#   """
-#   Args:
-#       rank: Unique identifier of each process
-#      world_size: Total number of processes
-#   """
-#   os.environ["MASTER_ADDR"] = "localhost"
-#   os.environ["MASTER_PORT"] = random.choice(["12355", "12356", "12357", "12358", "12359"])
-#   torch.cuda.set_device(rank)
-#   init_process_group(backend="nccl", rank=rank, world_size=world_size)
+    print('Checkpoint saved')
 
 if __name__=="__main__":
-    # world_size = torch.cuda.device_count()
-    # mp.spawn(main,  nprocs=world_size)
-    # destroy_process_group()
     main()

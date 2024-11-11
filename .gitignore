@@ -8,3 +8,4 @@ notebooks/contrastive/lightning_logs/
 notebooks/contrastive/wandb
 */*/wandb/
 wandb/
+*.pt

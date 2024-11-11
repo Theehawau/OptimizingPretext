@@ -1,9 +1,10 @@
 #!/bin/sh
-#SBATCH --job-name=0.1        
+#SBATCH --job-name=simclr_rotation       
 #SBATCH --nodes=1                   # Run all processes on a single node    
 #SBATCH --gres=gpu:1            # Number of GPUs (per node)
-#SBATCH -p it-hpc                     # Use the gpu partition
-#SBATCH --mem=200GB                  # Real mem
-#SBATCH --nodelist=gpu80-1               # Time limit in D-HH:MM``
+#SBATCH -p cscc-gpu-p                     # Use the gpu partition
+#SBATCH -q cscc-gpu-qos      
 
-python finetune.py -c 'imagenet1k_0.1'
+hostname
+
+python pretrain.py -c pretrain_from_rotation -t 

@@ -1,9 +1,10 @@
 #!/bin/sh
-#SBATCH --job-name=contrastive        
+#SBATCH --job-name=vits_2   
 #SBATCH --nodes=1                   # Run all processes on a single node    
 #SBATCH --gres=gpu:1            # Number of GPUs (per node)
-#SBATCH -p it-hpc                     # Use the gpu partition
-#SBATCH --mem=200GB                  # Real mem
-#SBATCH --nodelist=gpu80-1               # Time limit in D-HH:MM``
+#SBATCH -p cscc-gpu-p                     # Use the gpu partition
+#SBATCH -q cscc-gpu-qos                     # Use the gpu partition
 
-python pretrain.py 
+# python pretrain.py -c pretrain_from_jigsaw -t
+python pretrain.py -c pretrain_vits
+python pretrain.py -c pretrain_vits -t
