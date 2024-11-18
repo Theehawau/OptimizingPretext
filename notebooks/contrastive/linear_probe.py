@@ -13,6 +13,8 @@ import warnings
 warnings.filterwarnings("ignore")
 from pytorch_lightning.loggers import WandbLogger
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 from utils import *
 
 class Hparams:
@@ -138,3 +140,47 @@ trainer = Trainer(callbacks=[checkpoint_callback,accumulator],
 trainer.fit(model, data_loader,data_loader_test)
 trainer.save_checkpoint(save_name)
 trainer.validate(ckpt_path=checkpoint_callback.best_model_path, dataloaders=data_loader_test)
+
+
+# Use logistic regression as a linear probe
+# exp_name = f"SimCLR_pretrained_LR_linearprobe_on_{config.df}"
+# dataset = load_dataset(config.dataset_path)
+# if config.reduce < 1.0:
+#     print(f"Reducing dataset to {config.reduce} of total size")
+#     dataset = reduce_dataset(dataset, config.reduce)
+# transform = Augment(config.img_size).test_transform
+
+# print('Loading the dataset')
+# train_classification_loader = get_imagenet_dataloader(1024, dataset,  transform=transform, split='train')
+# val_classification_loader = get_imagenet_dataloader(1024, dataset,transform=transform, split=config.test_split)
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# model = SimCLR_eval(config.lr, model=backbone, linear_eval=True,use_nn=False).to(device)
+# X_train, y_train = extract_features(
+#                         loader = train_classification_loader,
+#                         feature_extraction_model = model,
+#                         batch_size = 1024,
+#                         device = 'cuda'
+#                     )
+# X_test, y_test = extract_features(
+#                         loader = val_classification_loader,
+#                         feature_extraction_model = model,
+#                         batch_size = 1024,
+#                         device = 'cuda'
+#                     )
+
+# scaler = StandardScaler()
+# clf_logreg = LogisticRegression(max_iter=1000)
+
+# print("Scaling data ....")
+# X_train_scaled = scaler.fit_transform(X_train)
+# X_test_scaled = scaler.transform(X_test)
+
+# print("Fitting data ....")
+# clf_logreg.fit(X_train_scaled, y_train)
+
+# print("Predicting data ....")
+# y_pred = clf_logreg.predict(X_test_scaled)
+# accuracy = accuracy_score(y_test, y_pred)
+# print(f"Linear probe accuracy: {accuracy}")
+

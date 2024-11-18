@@ -1,9 +1,8 @@
 #!/bin/sh
-#SBATCH --job-name=tiny        
+#SBATCH --job-name=6-tiny        
 #SBATCH --nodes=1                   # Run all processes on a single node    
 #SBATCH --gres=gpu:1            # Number of GPUs (per node)
-#SBATCH -p it-hpc                     # Use the gpu partition
-#SBATCH --mem=200GB                  # Real mem
-#SBATCH --nodelist=gpu80-1               # Time limit in D-HH:MM``
+#SBATCH -p cscc-gpu-p                     # Use the gpu partition
+#SBATCH -q cscc-gpu-qos     
 
-python finetune.py -c 'tinyimagenet'
+python finetune.py -c 'full_ft'

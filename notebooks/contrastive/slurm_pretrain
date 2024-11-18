@@ -1,10 +1,11 @@
 #!/bin/sh
-#SBATCH --job-name=vits_2   
+#SBATCH --job-name=vits_4   
 #SBATCH --nodes=1                   # Run all processes on a single node    
 #SBATCH --gres=gpu:1            # Number of GPUs (per node)
 #SBATCH -p cscc-gpu-p                     # Use the gpu partition
 #SBATCH -q cscc-gpu-qos                     # Use the gpu partition
 
 # python pretrain.py -c pretrain_from_jigsaw -t
+# python pretrain.py -c pretrain_vits
+# python pretrain.py -c pretrain_vits -t
 python pretrain.py -c pretrain_vits
-python pretrain.py -c pretrain_vits -t

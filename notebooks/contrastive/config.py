@@ -53,7 +53,7 @@ class HparamsPretrainViTs(Hparams):
         self.weight_decay = 1e-6
         self.dataset_path = "/l/users/emilio.villa/huggingface/datasets/ILSVRC___imagenet-1k"
         self.resume_from_checkpoint = True
-        self.save_prefix = 'simclr_vits_12hrs'
+        self.save_prefix = 'simclr_vits_36hrs'
         self.architecture="vits"
         self.backbone ='vits'
         self.exp_prefix='SimCLR_pretrain36hrs_'
@@ -66,10 +66,10 @@ class HparamsPretrainFromJigsaw(HparamsPretrain):
         self.lr = 3e-3 # for ADAm only
         self.weight_decay = 1e-6
         self.resume_from_checkpoint = False
-        self.save_prefix = 'simclr_jigsaw_'
-        self.exp_prefix='simclr_jigsaw_'
+        self.save_prefix = 'simclr_jigsaw_rotation'
+        self.exp_prefix='simclr_jigsaw_rotation'
         self.continue_task = True
-        self.previous_task_backbone ="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/saved_models/pretrained_models/jigsaw_rn50_adam_best_12hrs.pth"
+        self.previous_task_backbone ="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/jigsaw_rotation_resnet50.pth"
 
 
 class HparamsPretrainFromRotation(HparamsPretrain):
@@ -80,11 +80,10 @@ class HparamsPretrainFromRotation(HparamsPretrain):
         self.lr = 3e-3 # for ADAm only
         self.weight_decay = 1e-6
         self.resume_from_checkpoint = False
-        self.save_prefix = 'simclr_rotation_'
-        self.exp_prefix='simclr_rotation_'
+        self.save_prefix = 'simclr_rotation_jigsaw_'
+        self.exp_prefix='simclr_rotation_jigsaw_'
         self.continue_task = True
-        self.previous_task_backbone ="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/saved_models/pretrained_models/img1k03-resnet50-best-epoch-12.pth"
-
+        self.previous_task_backbone ="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/s1-jigsaw-s2-rot-bs64-img1k03-resnet50-best-epoch-15.pth"
 
 class HparamsTinyImagenet(Hparams):
     def __init__(self):
@@ -123,8 +122,64 @@ class HparamsImagenet1k_0_3(Hparams):
         self.reduce = 0.3
         self.linear_eval = False
 
+
+class HparamsFullFT(Hparams):
+    def __init__(self):
+        super().__init__()
+        self.df='tinyimagenet' #imagenet1k_0.1
+        self.save = "./full_FT_models/" # save checkpoint
+        self.batch_size = 400
+        self.exp_id = 6
+        self.lr = 0.1
+        self.ckpt = "/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/simclr_jigsaw_rotation_imagenet_0.3_backbone_weights.ckpt"
+        self.num_classes=200
+        self.resume_from_checkpoint = False
+        self.reduce = 1.0
+        self.random = False
+        self.linear_eval = False
+        self.test_split = 'valid'
+        self.dataset_path = "zh-plus/tiny-imagenet"
         
-configs ={
+
+class HparamsFullFT1(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.df='tinyimagenet' #imagenet1k_0.1
+        self.save = "./full_FT_models/" # save checkpoint
+        self.exp_id = 1
+        self.random = True
+
+class HparamsFullFT8(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.exp_id=8
+        self.ckpt="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/s1-simclr-s2-jigsaw-s3-rot-bs64-img1k03-resnet50-best-epoch-10.pth"
+      
+class HparamsFullFT3(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.exp_id=3  
+        self.ckpt="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/SimCLRresnet50_36hrs_imagenet_0.3_backbone_weights.ckpt"
+        
+class HparamsFullFT4(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.exp_id=4          
+        self.ckpt="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/jigsaw_rn50_36ep_best.pth"
+
+class HparamsFullFT7(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.exp_id=7        
+        self.ckpt="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/s1-simclr-s2-rot-s3-jigsaw_rn50.pth"
+
+class HparamsFullFT5(HparamsFullFT):
+    def __init__(self):
+        super().__init__()
+        self.exp_id=5            
+        self.ckpt="/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/s1-rot-s2-simclr-s3-jig_rn50.pth"
+        
+configs = {
     'base': Hparams,
     'tinyimagenet': HparamsTinyImagenet,
     'imagenet1k_0.1': HparamsImagenet1k_0_1,
@@ -132,5 +187,12 @@ configs ={
     'pretrain': HparamsPretrain,
     'pretrain_from_jigsaw': HparamsPretrainFromJigsaw,
     'pretrain_from_rotation': HparamsPretrainFromRotation,
-    'pretrain_vits': HparamsPretrainViTs
+    'pretrain_vits': HparamsPretrainViTs,
+    'full_ft': HparamsFullFT,
+    '1': HparamsFullFT1,
+    '8':HparamsFullFT8,
+    '3':HparamsFullFT3,
+    '4':HparamsFullFT4,
+    '7':HparamsFullFT7,
+    '5':HparamsFullFT5
 }

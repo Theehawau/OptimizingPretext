@@ -1,11 +1,8 @@
 #!/bin/sh
-#SBATCH --job-name=simclr_r_j       
+#SBATCH --job-name=4-tiny        
 #SBATCH --nodes=1                   # Run all processes on a single node    
 #SBATCH --gres=gpu:1            # Number of GPUs (per node)
 #SBATCH -p cscc-gpu-p                     # Use the gpu partition
-#SBATCH -q cscc-gpu-qos      
+#SBATCH -q cscc-gpu-qos     
 
-hostname
-
-# python pretrain.py -c pretrain_from_rotation -t 
-python pretrain.py -c pretrain_from_rotation
+python finetune.py -c '4'

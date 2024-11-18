@@ -11,8 +11,6 @@ from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchtune.training.metric_logging import WandBLogger
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -21,30 +19,8 @@ from config import configs
 from pretrain import Trainer
 import wandb
 
-class Hparams:
-    def __init__(self):
-        self.epochs = 100 # number of training epochs
-        self.seed = 42 # randomness seed
-        self.cuda = True # use nvidia gpu
-        self.img_size = 224 #image shape
-        self.save = "./saved_models/" # save checkpoint
-        self.gradient_accumulation_steps = 1 # gradient accumulation steps
-        self.batch_size = 800
-        self.lr = 0.1#1e-3
-        self.embedding_size= 4*128 # papers value is 128
-        self.temperature = 0.5 # 0.1 or 0.5
-        self.df='imagenet_0.3' #imagenet1k_0.1
-        self.random = False
-        self.backbone ='resnet50'
-        self.ckpt = 'resnet50_imagenet_0.3_backbone_weights.ckpt'
-        self.dataset_path = "/fsx/hyperpod-input-datasets/AROA6GBMFKRI2VWQAUGYI:Hawau.Toyin@mbzuai.ac.ae/hf_datasets/ILSVRC___imagenet-1k"
-        self.resume_from_checkpoint = False
-        self.reduce = 0.3
-        self.linear_eval = False
-        self.patience = 10
-
 class SimCLR_eval(nn.Module):
-    def __init__(self, lr, model=None, linear_eval=False, use_nn=True, feat_dim=2048):
+    def __init__(self, lr, model=None, linear_eval=False, use_nn=True, num_classes=1000, feat_dim=2048):
         super().__init__()
         self.lr = lr
         self.linear_eval = linear_eval
@@ -55,8 +31,9 @@ class SimCLR_eval(nn.Module):
         self.model = model
         
         if use_nn:
+            print("Number of classes", num_classes)
             self.mlp = torch.nn.Sequential(
-                torch.nn.Linear(feat_dim,1000)
+                torch.nn.Linear(feat_dim,num_classes)
             )
             self.model = torch.nn.Sequential(
                 model, self.mlp
@@ -72,9 +49,9 @@ class FinetuneTrainer(Trainer):
         self.config = config
         self.config.batch_size = self.config.batch_size * torch.cuda.device_count()
         self.model = model 
-        self.exp_name = "SimCLR_fullFT_resnet50_12hrs_" +  self.config.df 
+        self.exp_name = f"_{self.config.exp_id}_resnet50_12hrs_{self.config.df}"
         self.loss = torch.nn.CrossEntropyLoss()
-        # self.optimizer, self.scheduler = self.configure_optimizers()
+        self.optimizer, self.scheduler = self.configure_optimizers()
         self.best_loss = np.inf
         self.best_acc = 0
         self.epoch = 0
@@ -96,7 +73,7 @@ class FinetuneTrainer(Trainer):
         self.train_loader = self.get_dataloaders()
         self.test_loader = self.get_dataloaders(split=config.test_split)
         
-        self.logger = WandBLogger(project='cOptimizingPretext', name=self.exp_name, config=config.__dict__)
+        self.logger = WandBLogger(project='full_FT_OptimizingPretext', name=self.exp_name, config=config.__dict__)
     
     def train(self):
         for epoch in range(self.epoch, self.config.epochs):
@@ -219,10 +196,10 @@ class FinetuneTrainer(Trainer):
     
     def configure_optimizers(self):
         if self.config.linear_eval:
-          print(f"\n\n Attention! Linear evaluation \n")
+          print(f"\n\nAttention! Linear evaluation \n")
           optimizer = SGD(self.model.mlp.parameters(), lr=self.config.lr, momentum=0.9)
         else:
-          print(f"\n\n Attention! Full Fine Tuning \n")
+          print(f"\n\ Attention! Full Fine Tuning \n")
           optimizer = SGD(self.model.model.parameters(), lr=self.config.lr, momentum=0.9)
         scheduler = ReduceLROnPlateau(optimizer, 'min')
         return optimizer,scheduler
@@ -239,59 +216,25 @@ reproducibility(config)
 backbone = models.resnet50(pretrained=False)
 backbone.fc = nn.Identity()
 feat_dim = 2048
+
 if not config.random:
-    print('Loading the pretrained model')
+    print('Loading pretrained weights from ', config.ckpt)
     checkpoint = torch.load(config.ckpt)
-    backbone.load_state_dict(checkpoint['model_state_dict'])
     
-# model = SimCLR_eval(config.lr, model=backbone, linear_eval=config.linear_eval)
+    # INITIAL simclr weights
+    # backbone.load_state_dict(checkpoint['model_state_dict'])
+    
+    # EMILIO's weights
+    backbone.load_state_dict(checkpoint)
+    
+    # KARIMA's weights
+    # updated = {k.replace("backbone.", ""):v for k,v in checkpoint.items()}
+    # backbone.load_state_dict(updated, strict=False)
+    
+model = SimCLR_eval(config.lr, model=backbone, linear_eval=config.linear_eval, use_nn=True, num_classes=config.num_classes)
 
-# trainer = FinetuneTrainer(config, model)
+trainer = FinetuneTrainer(config, model)
 
-# trainer.train()
+trainer.train()
 
-# trainer.validate()
-
-
-# Use logistic regression as a linear probe
-exp_name = f"SimCLR_pretrained_LR_linearprobe_on_{config.df}"
-dataset = load_dataset(config.dataset_path)
-if config.reduce < 1.0:
-    print(f"Reducing dataset to {config.reduce} of total size")
-    dataset = reduce_dataset(dataset, config.reduce)
-transform = Augment(config.img_size).test_transform
-
-print('Loading the dataset')
-train_classification_loader = get_imagenet_dataloader(1024, dataset,  transform=transform, split='train')
-val_classification_loader = get_imagenet_dataloader(1024, dataset,transform=transform, split=config.test_split)
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-model = SimCLR_eval(config.lr, model=backbone, linear_eval=True,use_nn=False).to(device)
-X_train, y_train = extract_features(
-                        loader = train_classification_loader,
-                        feature_extraction_model = model,
-                        batch_size = 1024,
-                        device = 'cuda'
-                    )
-X_test, y_test = extract_features(
-                        loader = val_classification_loader,
-                        feature_extraction_model = model,
-                        batch_size = 1024,
-                        device = 'cuda'
-                    )
-
-scaler = StandardScaler()
-clf_logreg = LogisticRegression(max_iter=1000)
-
-print("Scaling data ....")
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-print("Fitting data ....")
-clf_logreg.fit(X_train_scaled, y_train)
-
-print("Predicting data ....")
-y_pred = clf_logreg.predict(X_test_scaled)
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Linear probe accuracy: {accuracy}")
-
+trainer.validate()
