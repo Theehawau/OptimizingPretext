@@ -64,6 +64,8 @@ class FinetuneTrainer(Trainer):
         
         self.model = self.model.to(self.device)
         
+        print(self.model)
+        
         if self.config.resume_from_checkpoint:
             self.resume_checkpoint()
         
@@ -155,6 +157,8 @@ class FinetuneTrainer(Trainer):
     def get_dataloaders(self, split='train'):
         transform = Augment(self.config.img_size).test_transform
         df = load_dataset(self.config.dataset_path)
+        if 'cls' in df['train'].features:
+            df = transform_dataset_clip_benchmark(df)
         if self.config.reduce < 1.0:
             df = reduce_dataset(df, self.config.reduce)
         return get_imagenet_dataloader(self.config.batch_size, df, transform=transform, split=split)

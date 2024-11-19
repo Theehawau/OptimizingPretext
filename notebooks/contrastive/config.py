@@ -126,26 +126,31 @@ class HparamsImagenet1k_0_3(Hparams):
 class HparamsFullFT(Hparams):
     def __init__(self):
         super().__init__()
-        self.df='tinyimagenet' #imagenet1k_0.1
         self.save = "./full_FT_models/" # save checkpoint
         self.batch_size = 400
         self.exp_id = 6
         self.lr = 0.1
         self.ckpt = "/l/users/hawau.toyin/CV805/OptimizingPretext/notebooks/contrastive/simclr_jigsaw_rotation_imagenet_0.3_backbone_weights.ckpt"
-        self.num_classes=200
         self.resume_from_checkpoint = False
         self.reduce = 1.0
         self.random = False
         self.linear_eval = False
-        self.test_split = 'valid'
-        self.dataset_path = "zh-plus/tiny-imagenet"
         
+        # tinyimagenet
+        # self.df='tinyimagenet' 
+        # self.num_classes=200
+        # self.test_split = 'valid'
+        # self.dataset_path = "zh-plus/tiny-imagenet"
+        
+        # voc2007
+        self.df='voc2007'
+        self.num_classes=20
+        self.test_split = 'test'
+        self.dataset_path = "clip-benchmark/wds_voc2007"
 
 class HparamsFullFT1(HparamsFullFT):
     def __init__(self):
         super().__init__()
-        self.df='tinyimagenet' #imagenet1k_0.1
-        self.save = "./full_FT_models/" # save checkpoint
         self.exp_id = 1
         self.random = True
 

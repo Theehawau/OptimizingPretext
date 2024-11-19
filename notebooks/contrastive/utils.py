@@ -164,6 +164,19 @@ def reduce_dataset(dataset_dict, proportion, seed=42):
  
     return DatasetDict(reduced_dict)
 
+def transform_dataset_clip_benchmark(dataset_dict):
+    '''
+    Transforms the datasets from clip-benchmark to the format we are using & drops unuseful columns.
+    '''
+    def transform_split(split):
+        # Rename columns
+        split = split.rename_column("cls", "label").rename_column("webp", "image")
+        # Select only 'label' and 'image' columns
+        split = split.remove_columns([col for col in split.column_names if col not in {"label", "image"}])
+        return split
+
+    return DatasetDict({split_name: transform_split(split) for split_name, split in dataset_dict.items()})
+
 class Augment:
     """
     A stochastic data augmentation module
@@ -194,7 +207,7 @@ class Augment:
 
         self.test_transform = T.Compose(
             [
-                T.Resize(size=img_size),
+                T.Resize((224,224)),
                 # T.RandomResizedCrop(size=img_size),
                 T.ToTensor(),
                 T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
