@@ -8,4 +8,4 @@
 hostname
 
 # python pretrain.py -c pretrain_from_rotation -t 
-python pretrain.py -c pretrain_from_rotation
+python pretrain.py -c pretrain_from_jigsaw 

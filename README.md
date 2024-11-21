@@ -1,4 +1,43 @@
-SVM
+<div align="center">
+
+<h1> A Study on Optimal Pretext Tasks Configurations </h1>
+
+This project does not introduce a novel approach. This work examines 3 Pre-Text tasks (Contrastive, Rotation, Jigsaw) individually and in sequential combinations under fixed computational constraints.
+
+<div>
+    <a href='https://www.linkedin.com/in/amirbek-djanibekov-a7788b201/' target='_blank'>Emilio Villa Cueva<sup>* 1</a>&emsp;
+    <a href='https://www.linkedin.com/in/toyinhawau/'> Hawau Olamide Toyin <sup>* 1</sup> </a>&emsp;
+    <a href='https://www.linkedin.com/in/ajinkya-kulkarni-32b80a130/' target='_blank'>Karima Kadaoui<sup>1</a>&emsp;
+</div>
+
+<br>
+
+
+## Environment & Installation
+
+Python version: 3.10+
+
+1) Clone this repo
+```bash
+git clone https://github.com/Theehawau/OptimizingPretext.git
+cd OptimizingPretext
+pip install -r optimizepretext/requirements.txt
+```
+
+
+## Pre-training
+
+For each task in (contrastive, jigsaw, rotation):
+
+```bash
+bash notebooks/$task/pretrain.sh
+```
+
+## Fine-tuning
+
+
+
+<!-- SVM
 | PPT Config | Model | Dataset | PTT Dataset Perc. | PPT Accuracy | Linear Probe K=10| Linear Probe K=50| Linear Probe K=100| Full FT | 
 |---|---|---|---|---|---|---|---|---|
 | Random Init | ResNet50 | ImageNet | 0.1 | -- | 44.60% | 20.56% | | |
@@ -29,7 +68,7 @@ LR
 | Random Init KK | ResNet50 | Imagenet1k | -- | 0.3 | -- | 3.82 | -- |
 | Rotation | ResNet50 | TinyImageNet | 1 | 1 | 74.53 | 11.67 | -- |
 | Rotation | ResNet50 | Imagenet1k | 0.3 | 0.1 | 76.85 | 6.98 | -- |
-| Rotation | ResNet50 | Imagenet1k | 0.3 | 0.3 | 76.85 | 7.41 | -- |
+| Rotation | ResNet50 | Imagenet1k | 0.3 | 0.3 | 76.85 | 7.41 | -- | -->
 
 
 
