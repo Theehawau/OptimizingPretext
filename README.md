@@ -19,7 +19,7 @@
 
 Python version: 3.10+
 
-1) Clone this repo
+Clone this repo and install dependencies:
 ```bash
 git clone https://github.com/Theehawau/OptimizingPretext.git
 cd OptimizingPretext
@@ -32,10 +32,14 @@ pip install -r optimizepretext/requirements.txt
 For each task in (contrastive, jigsaw, rotation):
 
 ```bash
+export task=contrastive
 bash notebooks/$task/pretrain.sh
 ```
 
 ## Fine-tuning
+
+
+
 
 
 
