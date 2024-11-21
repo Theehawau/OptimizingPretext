@@ -2,15 +2,17 @@
 
 <h1> A Study on Optimal Pretext Tasks Configurations </h1>
 
-This project does not introduce a novel approach. This work examines 3 Pre-Text tasks (Contrastive, Rotation, Jigsaw) individually and in sequential combinations under fixed computational constraints.
+<i> This project does not introduce a novel approach. </i> This work examines 3 Pre-Text tasks (Contrastive, Rotation, Jigsaw) individually and in sequential combinations under fixed computational constraints.
 
 <div>
-    <a href='https://www.linkedin.com/in/amirbek-djanibekov-a7788b201/' target='_blank'>Emilio Villa Cueva<sup>* 1</a>&emsp;
-    <a href='https://www.linkedin.com/in/toyinhawau/'> Hawau Olamide Toyin <sup>* 1</sup> </a>&emsp;
-    <a href='https://www.linkedin.com/in/ajinkya-kulkarni-32b80a130/' target='_blank'>Karima Kadaoui<sup>1</a>&emsp;
+    <a href='https://www.linkedin.com/in/amirbek-djanibekov-a7788b201/' target='_blank'>Emilio Villa Cueva<sup> </a>&emsp;
+    <a href='https://www.linkedin.com/in/toyinhawau/'> Hawau Olamide Toyin <sup></sup> </a>&emsp;
+    <a href='https://www.linkedin.com/in/ajinkya-kulkarni-32b80a130/' target='_blank'>Karima Kadaoui<sup></a>&emsp;
 </div>
 
 <br>
+
+</div>
 
 
 ## Environment & Installation
