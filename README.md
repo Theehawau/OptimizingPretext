@@ -56,7 +56,8 @@ To finetune the full resnet50 on either of our reported dataset, update the conf
 
 ```
 # Training
-python contrastive/finetune.py --config "full_ft" --data "tinyimagenet" -t #other data choices: caltech, voc2007
+python contrastive/finetune.py --config "full_ft" --data "tinyimagenet" -t 
+#other data choices: caltech, voc2007
 
 # Evaluating
 python contrastive/finetune.py --config "full_ft" --data "tinyimagenet" 
