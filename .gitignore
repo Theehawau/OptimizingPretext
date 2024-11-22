@@ -11,6 +11,9 @@ contrastive/lightning_logs/
 contrastive/__pycache__/
 contrastive/saved_models/
 contrastive/slurm_finetune*
+contrastive/config_.py
+contrastive/linear_probe.py
+contrastive/simclr.py
 */*/wandb/
 wandb/
 *.pt
