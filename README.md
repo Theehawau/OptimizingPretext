@@ -36,8 +36,15 @@ export task=contrastive
 bash notebooks/$task/pretrain.sh
 ```
 
+### Jigsaw
+The parameters have to be set in the config file in jigsaw/configs; the hyperparameters and seed in the config file are the default ones.
+To run a training session for jigsaw, we run the following:
+```python run_jigsaw.py --config configs/config_jigsaw.yml```
+In the config file the user must determine the path for saving the checkpoints.
+
 ## Fine-tuning
 
+## Linear Probing
 
 
 
