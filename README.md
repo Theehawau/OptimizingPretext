@@ -27,19 +27,21 @@ pip install -r optimizepretext/requirements.txt
 ```
 
 
-## Pre-training
+## Pre-text Training
 
-For each task in (contrastive, jigsaw, rotation):
+For each pre-text task training, follow instructions below:
 
+### SimCLR
+Default training configurations are in [contrastive/config.py](./contrastive/config.py)
 ```bash
 export task=contrastive
-bash notebooks/$task/pretrain.sh
+bash $task/pretrain.sh
 ```
 
 ### Jigsaw
 The parameters have to be set in the config file in jigsaw/configs; the hyperparameters and seed in the config file are the default ones.
 To run a training session for jigsaw, we run the following:
-```python run_jigsaw.py --config configs/config_jigsaw.yml```
+```python jigsaw/run_jigsaw.py --config jigsaw/configs/config_jigsaw.yml```
 In the config file the user must determine the path for saving the checkpoints.
 
 ## Fine-tuning
@@ -85,18 +87,16 @@ LR
 
 
 
-### Dataset
-Using all labels
-Pretraining - 30% of Imagenet
+## Dataset 
 
-Finetuning - 10% of Imagenet
-Finetuning - full Imagenet
+Pre-text training - 30% of Imagenet
 
-- logistic regression from scikit learn
-- mlp
-- Full finetuning
+Finetuning:
 
-Using TinyImageNet for all experiments
+- TiyImageNet
+- Voc2007
+- Caltech-101
+
 
 
 
