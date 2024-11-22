@@ -1,0 +1,30 @@
+hf_access_token : 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
+dataset_download_path : /l/users/emilio.villa/huggingface/datasets ## dir to download datasets
+# ptt_dataset_name : zh-plus/tiny-imagenet
+ptt_dataset_name : ILSVRC/imagenet-1k
+training_data_proportion : 0.3 ## 30% of ImageNet1k
+
+n_permutations : 1000 ## number of per
+jigsaw_architecture : resnet50 ## resnet18, resnet50, or vit
+
+seed : 42
+
+epochs : 50
+log_each : 100
+
+batch_size : 512
+
+multi_gpu : false # if true uses 4 gpus
+
+optimizer: sgd
+optim_lr : 0.005
+optim_momentum : 0.9
+optim_decay : 0.0001
+
+checkpoint_path : null #in case we are reloading an old checkpoint
+
+backbone_weights_path: null # if provided, path to resnet state_dict to initialize the model (for training from a different PTT)
+
+experiment_name : jigsaw_resnet50
+savedir : /l/users/emilio.villa/cv_ptt/checkpoints/ #end with /
+results_savedir : 'output/' #end with /
