@@ -31,6 +31,13 @@ pip install -r optimizepretext/requirements.txt
 
 For each pre-text task training, follow instructions below:
 
+### Jigsaw
+Default training configurations are in [jigsaw/configs](jigsaw/configs) 
+```bash
+python jigsaw/run_jigsaw.py --config jigsaw/configs/config_jigsaw.yml
+```
+In the config file the user must update the path to save the checkpoints.
+
 ### SimCLR
 Default training configurations are in [contrastive/config.py](./contrastive/config.py)
 ```bash
@@ -38,17 +45,27 @@ export task=contrastive
 bash $task/pretrain.sh
 ```
 
-### Jigsaw
-The parameters have to be set in the config file in jigsaw/configs; the hyperparameters and seed in the config file are the default ones.
-To run a training session for jigsaw, we run the following:
-```python jigsaw/run_jigsaw.py --config jigsaw/configs/config_jigsaw.yml```
-In the config file the user must determine the path for saving the checkpoints.
-
 ## Fine-tuning
+
+To finetune the full resnet50 on either of our reported dataset, update the config and set the path to the pre-text trained weights checkpoint. 
+
+```
+# Training
+python contrastive/finetune.py --config "full_ft" --data "tinyimagenet" -t #other data choices: caltech, voc2007
+
+# Evaluating
+python python contrastive/finetune.py --config "full_ft" --data "tinyimagenet" 
+```
+
+To finetune on new dataset, update hyperparameters in [contrastive/config.py](./contrastive/config.py)
 
 ## Linear Probing
 
+To evaluate PTT using linear probing 
 
+```bash 
+python linear_probe_example/linear_probe.py
+```
 
 
 
@@ -87,7 +104,7 @@ LR
 
 
 
-## Dataset 
+<!-- ## Dataset 
 
 Pre-text training - 30% of Imagenet
 
@@ -95,7 +112,7 @@ Finetuning:
 
 - TiyImageNet
 - Voc2007
-- Caltech-101
+- Caltech-101 -->
 
 
 

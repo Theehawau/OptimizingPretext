@@ -3,7 +3,6 @@ Linear probe (logistic regression)
 
 '''
 
-import pytorch_lightning as pl
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
@@ -16,7 +15,6 @@ import numpy as np
 from torchvision import transforms, models
 import torch.utils.data as data
 from tqdm.auto import tqdm
-import pytorch_lightning as pl
 import torch
 import torch
 import torchvision.models as models

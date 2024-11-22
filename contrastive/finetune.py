@@ -1,23 +1,23 @@
-import numpy as np
 import os
-import argparse
 import torch
+import argparse
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
 import torchvision.models as models
+
 from tqdm import tqdm
 from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchtune.training.metric_logging import WandBLogger
-from sklearn.linear_model import LogisticRegression
+
 import warnings
 warnings.filterwarnings("ignore")
 
 from utils import *
 from config import configs
 from pretrain import Trainer
-import wandb
 
 class SimCLR_eval(nn.Module):
     def __init__(self, lr, model=None, linear_eval=False, use_nn=True, num_classes=1000, feat_dim=2048):
@@ -211,12 +211,13 @@ class FinetuneTrainer(Trainer):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c','--config', type=str, default='base', choices=configs.keys(), help='Configuration to use')
+parser.add_argument('-d','--data', type=str, default='base', choices=configs.keys(), help='Finetune Dataset to use')
 parser.add_argument('-t','--train', action='store_true', help='train the model')
 
 
 args = parser.parse_args()
 
-config = configs[args.config]()
+config = configs[args.config](args.data)
 reproducibility(config)
 backbone = models.resnet50(pretrained=False)
 backbone.fc = nn.Identity()
@@ -230,8 +231,6 @@ if not config.random:
     if 'model_state_dict' in checkpoint.keys():
         backbone.load_state_dict(checkpoint['model_state_dict'])
     
-    # EMILIO's weights
-    # backbone.load_state_dict(checkpoint)
     else:
     # EMILIO's weights
         try:

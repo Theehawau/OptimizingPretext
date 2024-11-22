@@ -125,7 +125,7 @@ class HparamsImagenet1k_0_3(Hparams):
 
 
 class HparamsFullFT(Hparams):
-    def __init__(self):
+    def __init__(self, dataset="tinyimagenet"):
         super().__init__()
         self.save = "./full_FT_models/" # save checkpoint
         self.batch_size = 400
@@ -138,22 +138,28 @@ class HparamsFullFT(Hparams):
         self.linear_eval = False
         
         # tinyimagenet
-        # self.df='tinyimagenet' 
-        # self.num_classes=200
-        # self.test_split = 'valid'
-        # self.dataset_path = "zh-plus/tiny-imagenet"
+        if dataset == "tinyimagenet":
+            self.df='tinyimagenet' 
+            self.num_classes=200
+            self.test_split = 'valid'
+            self.dataset_path = "zh-plus/tiny-imagenet"
         
         # voc2007
-        # self.df='voc2007'
-        # self.num_classes=20
-        # self.test_split = 'test'
-        # self.dataset_path = "clip-benchmark/wds_voc2007"
+        elif dataset == "voc2007":
+            self.df='voc2007'
+            self.num_classes=20
+            self.test_split = 'test'
+            self.dataset_path = "clip-benchmark/wds_voc2007"
         
         # Caltech
-        self.df='caltech'
-        self.num_classes=102
-        self.test_split = 'test'
-        self.dataset_path = "clip-benchmark/wds_vtab-caltech101"
+        elif dataset == 'caltech':
+            self.df='caltech'
+            self.num_classes=102
+            self.test_split = 'test'
+            self.dataset_path = "clip-benchmark/wds_vtab-caltech101"
+            
+        else:
+            raise ValueError(f"Dataset {dataset} not supported")
 
 class HparamsFullFT1(HparamsFullFT):
     def __init__(self):
@@ -218,13 +224,13 @@ configs = {
     'pretrain_from_rotation': HparamsPretrainFromRotation,
     'pretrain_vits': HparamsPretrainViTs,
     'full_ft': HparamsFullFT,
-    '1': HparamsFullFT1,
-    '2': HparamsFullFT2,
-    '8':HparamsFullFT8,
-    '9':HparamsFullFT9,
-    '10':HparamsFullFT10,
-    '3':HparamsFullFT3,
-    '4':HparamsFullFT4,
-    '7':HparamsFullFT7,
-    '5':HparamsFullFT5
+#     '1': HparamsFullFT1,
+#     '2': HparamsFullFT2,
+#     '8':HparamsFullFT8,
+#     '9':HparamsFullFT9,
+#     '10':HparamsFullFT10,
+#     '3':HparamsFullFT3,
+#     '4':HparamsFullFT4,
+#     '7':HparamsFullFT7,
+#     '5':HparamsFullFT5
 }

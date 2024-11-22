@@ -4,8 +4,13 @@ datasets/
 outputs/
 *.pth
 *.ckpt
-notebooks/contrastive/lightning_logs/
-notebooks/contrastive/wandb
+contrastive/lightning_logs/
+contrastive/wandb
+contrastive/full_FT_models/
+contrastive/lightning_logs/
+contrastive/__pycache__/
+contrastive/saved_models/
+contrastive/slurm_finetune*
 */*/wandb/
 wandb/
 *.pt
