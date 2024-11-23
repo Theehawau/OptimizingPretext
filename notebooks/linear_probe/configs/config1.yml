@@ -1,7 +1,7 @@
 dataset: voc2007 #['imagenet1k', 'tiny_imagenet', 'voc2007', 'caltech101']
-N_values: [2, 4] # if -1 the entire training dataset gets evaluated 
-pretrained_path: /home/emilio.villa/nlp_playground/CV_PTTs/trained_backbones_stage2/s1-rot-s2-simclr.pth
-experiment_savename : rn50_voc2007_s1-rot-s2-simclr
+N_values: [2, 4] # layers to extract the features & conduct evaluations on
+pretrained_path: null ## provide the path to a trained resnet state_dict; if set to none resnet is randomly initialized
+experiment_savename : linear_probe_result
 frozen_backbone: true
 batch_size : 1024 ##batch size for feature extractor
 batch_size_linear_layer: 64
@@ -10,7 +10,7 @@ max_epochs: 10
 
 lr_max_iterations: 2000
 
-output_folder: /home/emilio.villa/nlp_playground/CV_PTTs/jigsaw/probe_output_stage2/final_experiments
+output_folder: outputs/
 
 K_values: null # if -1 the entire training dataset gets evaluated
 p_reduction : 1.0
