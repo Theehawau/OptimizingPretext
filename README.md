@@ -39,9 +39,11 @@ python jigsaw/run_jigsaw.py --config jigsaw/configs/config_jigsaw.yml
 In the config file the user must update the path to save the checkpoints.
 
 ### Rotation
-Default training configuration are in [notebooks/rotation/rotation_experiment.ipynb](notebooks/rotation/rotation_experiment.ipynb)
-
-Run this [python notebook](notebooks/rotation/rotation_experiment.ipynb) to train.
+Default training configurations are in [rotation/configs](rotation/configs) 
+```bash
+python rotation/run_rotation.py --config rotation/configs/config_rotation.yml
+```
+In the config file the user must update the path to save the checkpoints.
 
 ### SimCLR
 Default training configurations are in [contrastive/config.py](./contrastive/config.py)
