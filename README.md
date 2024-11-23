@@ -48,8 +48,7 @@ In the config file the user must update the path to save the checkpoints.
 ### SimCLR
 Default training configurations are in [contrastive/config.py](./contrastive/config.py)
 ```bash
-export task=contrastive
-bash $task/pretrain.sh
+python contrastive/pretrain.py --config pretrain --train
 ```
 
 ## Fine-tuning
