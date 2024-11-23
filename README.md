@@ -4,6 +4,8 @@
 
 <i> This project does not introduce a novel approach. </i> This work examines 3 Pre-Text tasks (Contrastive, Rotation, Jigsaw) individually and in sequential combinations under fixed computational constraints.
 
+<a href=''> <a href='https://drive.google.com/drive/folders/1uzG_xTdJE9v9W20U5Jt2uiI7U1h1BeDP'><img src='https://img.shields.io/badge/ckpt-Weights-red'></a> &nbsp;  <a href='https://docs.google.com/presentation/d/1xwxsysijnPsu_Z-h-syFOEiTjEsmkP-ic9bmJBbUCpM/edit?usp=drive_link'><img src='https://img.shields.io/badge/project-Slides-green'></a> &nbsp; <a href='https://drive.google.com/file/d/1IjJD7SdX4MWvX3qQ95jeQZ1KpcYajVrN/view?usp=drive_link'><img src='https://img.shields.io/badge/teaser-Video-yellow'></a> &nbsp;
+
 <div>
     <a href='https://www.linkedin.com/in/amirbek-djanibekov-a7788b201/' target='_blank'>Emilio Villa Cueva<sup> </a>&emsp;
     <a href='https://www.linkedin.com/in/toyinhawau/'> Hawau Olamide Toyin <sup></sup> </a>&emsp;
@@ -13,6 +15,7 @@
 <br>
 
 </div>
+
 
 
 ## Environment & Installation
