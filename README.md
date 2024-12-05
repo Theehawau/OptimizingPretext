@@ -24,9 +24,9 @@ Python version: 3.10+
 
 Clone this repo and install dependencies:
 ```bash
-git clone https://github.com/Theehawau/OptimizingPretext.git
-cd OptimizingPretext
-pip install -r optimizepretext/requirements.txt
+git clone https://github.com/sqrk/LowResDys.git
+cd LowResDys
+pip install -r requirements.txt
 ```
 
 
